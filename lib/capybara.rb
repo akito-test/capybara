@@ -27,7 +27,7 @@ module Capybara
 
     attr_accessor :app
     attr_reader :reuse_server, :per_session_configuration
-    attr_writer :default_driver, :current_driver, :javascript_driver, :session_name
+    attr_writer :default_driver, :javascript_driver
 
     # Delegate Capybara global configurations
     # @!method default_selector
@@ -277,10 +277,21 @@ module Capybara
     # @return [Symbol]    The name of the driver currently in use
     #
     def current_driver
-      @current_driver || default_driver
+      if per_session_configuration
+        Thread.current['capybara_current_driver']
+      else
+        @current_driver
+      end || default_driver
     end
     alias_method :mode, :current_driver
 
+    def current_driver=(name)
+      if per_session_configuration
+        Thread.current['capybara_current_driver'] = name
+      else
+        @current_driver = name
+      end
+    end
     ##
     #
     # @return [Symbol]    The name of the driver used when JavaScript is needed
@@ -349,7 +360,19 @@ module Capybara
     # @return [Symbol]    The name of the currently used session.
     #
     def session_name
-      @session_name ||= :default
+      if per_session_configuration
+        Thread.current['capybara_session_name'] ||= :default
+      else
+        @session_name ||= :default
+      end
+    end
+
+    def session_name=(name)
+      if per_session_configuration
+        Thread.current['capybara_session_name'] = name
+      else
+        @session_name = name
+      end
     end
 
     ##
